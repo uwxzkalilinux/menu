@@ -1,65 +1,149 @@
-import Image from "next/image";
+'use client';
 
-export default function Home() {
+import { useState, useEffect, useMemo } from 'react';
+import { AnimatePresence, motion } from 'framer-motion';
+import Header from '@/components/Header';
+import CategoryNav from '@/components/CategoryNav';
+import DishCard from '@/components/DishCard';
+import SkeletonCard from '@/components/SkeletonCard';
+import { Category, MenuItem } from '@/lib/types';
+import { supabase } from '@/lib/supabase';
+import { mockCategories, mockMenuItems } from '@/lib/mock-data';
+
+const USE_MOCK =
+  !process.env.NEXT_PUBLIC_SUPABASE_URL ||
+  process.env.NEXT_PUBLIC_SUPABASE_URL.includes('YOUR_PROJECT_ID');
+
+export default function MenuPage() {
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [items, setItems] = useState<MenuItem[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [selectedCategory, setSelectedCategory] = useState('all');
+
+  useEffect(() => {
+    async function load() {
+      if (USE_MOCK) {
+        // Simulate network delay for realistic skeleton effect
+        await new Promise((r) => setTimeout(r, 900));
+        setCategories(mockCategories);
+        setItems(mockMenuItems);
+        setLoading(false);
+        return;
+      }
+
+      const [{ data: cats }, { data: menuItems }] = await Promise.all([
+        supabase.from('categories').select('*').order('sort_order'),
+        supabase
+          .from('menu_items')
+          .select('*, categories(*)')
+          .eq('is_available', true)
+          .order('sort_order'),
+      ]);
+      if (cats) setCategories(cats);
+      if (menuItems) setItems(menuItems);
+      setLoading(false);
+    }
+    load();
+  }, []);
+
+  const visibleItems = useMemo(() => {
+    if (selectedCategory === 'all') return items;
+    return items.filter((i) => i.category_id === selectedCategory);
+  }, [items, selectedCategory]);
+
+  const handleCategorySelect = (id: string) => {
+    setSelectedCategory(id);
+  };
+
   return (
-    <div className="flex min-h-screen items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex min-h-screen w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
-        </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
+    <div style={{ minHeight: '100dvh', background: 'var(--color-bg)' }}>
+      <Header />
+      <CategoryNav
+        categories={categories}
+        selected={selectedCategory}
+        onSelect={handleCategorySelect}
+      />
+
+      <main style={{ maxWidth: 640, margin: '0 auto', padding: '20px 14px 40px' }}>
+        {/* Section heading */}
+        <AnimatePresence mode="wait">
+          <motion.h2
+            key={selectedCategory}
+            initial={{ opacity: 0, x: 10 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: -10 }}
+            transition={{ duration: 0.25 }}
+            style={{
+              fontFamily: "'Cairo', sans-serif",
+              fontSize: 18,
+              fontWeight: 700,
+              color: 'var(--color-text)',
+              marginBottom: 16,
+            }}
           >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
+            {selectedCategory === 'all'
+              ? 'جميع الأطباق'
+              : categories.find((c) => c.id === selectedCategory)?.name_ar ?? ''}
+            {!loading && (
+              <span
+                style={{
+                  marginRight: 8,
+                  fontSize: 13,
+                  fontWeight: 500,
+                  color: 'var(--color-text-muted)',
+                }}
+              >
+                ({visibleItems.length})
+              </span>
+            )}
+          </motion.h2>
+        </AnimatePresence>
+
+        {/* Item grid */}
+        <div
+          style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(2, 1fr)',
+            gap: 14,
+          }}
+        >
+          {loading
+            ? Array.from({ length: 6 }).map((_, i) => <SkeletonCard key={i} />)
+            : visibleItems.map((item, idx) => (
+              <DishCard key={item.id} item={item} index={idx} />
+            ))}
         </div>
+
+        {!loading && visibleItems.length === 0 && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            style={{
+              textAlign: 'center',
+              padding: '60px 20px',
+              color: 'var(--color-text-muted)',
+              fontFamily: "'Cairo', sans-serif",
+              fontSize: 16,
+            }}
+          >
+            لا توجد أطباق في هذه الفئة حالياً
+          </motion.div>
+        )}
       </main>
+
+      {/* Footer */}
+      <footer
+        style={{
+          textAlign: 'center',
+          padding: '24px 20px',
+          borderTop: '1px solid var(--color-border)',
+          color: 'var(--color-text-muted)',
+          fontSize: 12,
+          fontFamily: "'Cairo', sans-serif",
+        }}
+      >
+        © 2025 مطعم بيت الكرم — جميع الحقوق محفوظة
+      </footer>
     </div>
   );
 }
