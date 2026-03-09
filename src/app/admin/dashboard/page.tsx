@@ -28,12 +28,18 @@ export default function AdminDashboard() {
     const [editCategory, setEditCategory] = useState<Category | null>(null);
     const [saving, setSaving] = useState(false);
 
-    // Delete state
+    // Delete state for Items
     const [deleteOpen, setDeleteOpen] = useState(false);
     const [deleteTarget, setDeleteTarget] = useState<MenuItem | null>(null);
     const [deleting, setDeleting] = useState(false);
 
-    // Filter
+    // Delete state for Categories
+    const [deleteCatOpen, setDeleteCatOpen] = useState(false);
+    const [deleteCatTarget, setDeleteCatTarget] = useState<Category | null>(null);
+    const [deletingCat, setDeletingCat] = useState(false);
+
+    // Filter and Tabs
+    const [activeTab, setActiveTab] = useState<'items' | 'categories'>('items');
     const [filterCat, setFilterCat] = useState('all');
 
     // Auth check
@@ -197,6 +203,22 @@ export default function AdminDashboard() {
         setDeleteTarget(null);
     }
 
+    async function handleDeleteCategory() {
+        if (!deleteCatTarget) return;
+        setDeletingCat(true);
+
+        if (USE_MOCK) {
+            setCategories((prev) => prev.filter((i) => i.id !== deleteCatTarget.id));
+        } else {
+            await supabase.from('categories').delete().eq('id', deleteCatTarget.id);
+            await loadData();
+        }
+
+        setDeletingCat(false);
+        setDeleteCatOpen(false);
+        setDeleteCatTarget(null);
+    }
+
     async function handleLogout() {
         await supabase.auth.signOut();
         router.replace('/admin/login');
@@ -273,51 +295,83 @@ export default function AdminDashboard() {
                     ))}
                 </div>
 
-                {/* Toolbar */}
-                <div style={{ display: 'flex', gap: 10, marginBottom: 16, flexWrap: 'wrap' }}>
-                    {/* Category filter */}
-                    <div style={{ position: 'relative', flex: 1, minWidth: 160 }}>
-                        <select
-                            className="admin-input"
-                            value={filterCat}
-                            onChange={(e) => setFilterCat(e.target.value)}
-                            style={{ paddingLeft: 32 }}
-                        >
-                            <option value="all">جميع الفئات</option>
-                            {categories.map((c) => (
-                                <option key={c.id} value={c.id}>{c.name_ar}</option>
-                            ))}
-                        </select>
-                        <ChevronDown size={14} style={{ position: 'absolute', left: 10, top: '50%', transform: 'translateY(-50%)', color: 'var(--color-text-muted)', pointerEvents: 'none' }} />
-                    </div>
-
-                    {/* Add Category button */}
+                {/* Tabs */}
+                <div style={{ display: 'flex', gap: 8, marginBottom: 20, borderBottom: '1px solid var(--color-border)', paddingBottom: 10 }}>
                     <button
-                        className="btn-ghost"
-                        style={{ width: 'auto', display: 'flex', alignItems: 'center', gap: 6, padding: '10px 18px', border: '1px solid var(--color-primary)', color: 'var(--color-primary-light)' }}
-                        onClick={() => { setEditCategory(null); setCategoryModalOpen(true); }}
+                        onClick={() => setActiveTab('items')}
+                        style={{
+                            padding: '8px 16px', borderRadius: 20, fontFamily: "'Cairo', sans-serif", fontWeight: 700, fontSize: 14,
+                            background: activeTab === 'items' ? 'var(--color-primary)' : 'transparent',
+                            color: activeTab === 'items' ? '#fff' : 'var(--color-text-muted)',
+                            border: 'none', cursor: 'pointer', transition: 'all 0.2s'
+                        }}
                     >
-                        <Plus size={16} />
-                        إضافة فئة
+                        الأطباق
                     </button>
-
-                    {/* Add Item button */}
                     <button
-                        className="btn-primary"
-                        style={{ width: 'auto', display: 'flex', alignItems: 'center', gap: 6, padding: '10px 18px' }}
-                        onClick={() => { setEditItem(null); setModalOpen(true); }}
+                        onClick={() => setActiveTab('categories')}
+                        style={{
+                            padding: '8px 16px', borderRadius: 20, fontFamily: "'Cairo', sans-serif", fontWeight: 700, fontSize: 14,
+                            background: activeTab === 'categories' ? 'var(--color-primary)' : 'transparent',
+                            color: activeTab === 'categories' ? '#fff' : 'var(--color-text-muted)',
+                            border: 'none', cursor: 'pointer', transition: 'all 0.2s'
+                        }}
                     >
-                        <Plus size={16} />
-                        إضافة طبق
+                        الفئات والأقسام
                     </button>
                 </div>
 
-                {/* Items list */}
+                {/* Toolbar */}
+                <div style={{ display: 'flex', gap: 10, marginBottom: 16, flexWrap: 'wrap' }}>
+                    {activeTab === 'items' ? (
+                        <>
+                            {/* Category filter */}
+                            <div style={{ position: 'relative', flex: 1, minWidth: 160 }}>
+                                <select
+                                    className="admin-input"
+                                    value={filterCat}
+                                    onChange={(e) => setFilterCat(e.target.value)}
+                                    style={{ paddingLeft: 32 }}
+                                >
+                                    <option value="all">جميع الفئات</option>
+                                    {categories.map((c) => (
+                                        <option key={c.id} value={c.id}>{c.name_ar}</option>
+                                    ))}
+                                </select>
+                                <ChevronDown size={14} style={{ position: 'absolute', left: 10, top: '50%', transform: 'translateY(-50%)', color: 'var(--color-text-muted)', pointerEvents: 'none' }} />
+                            </div>
+
+                            {/* Add Item button */}
+                            <button
+                                className="btn-primary"
+                                style={{ width: 'auto', display: 'flex', alignItems: 'center', gap: 6, padding: '10px 18px' }}
+                                onClick={() => { setEditItem(null); setModalOpen(true); }}
+                            >
+                                <Plus size={16} />
+                                إضافة طبق
+                            </button>
+                        </>
+                    ) : (
+                        <div style={{ display: 'flex', flex: 1, justifyContent: 'flex-end' }}>
+                            {/* Add Category button */}
+                            <button
+                                className="btn-primary"
+                                style={{ width: 'auto', display: 'flex', alignItems: 'center', gap: 6, padding: '10px 18px' }}
+                                onClick={() => { setEditCategory(null); setCategoryModalOpen(true); }}
+                            >
+                                <Plus size={16} />
+                                إضافة فئة أو قسم جديد
+                            </button>
+                        </div>
+                    )}
+                </div>
+
+                {/* Main Content Area */}
                 {loading ? (
                     <div style={{ textAlign: 'center', padding: '40px', color: 'var(--color-text-muted)', fontFamily: "'Cairo', sans-serif" }}>
                         جاري التحميل...
                     </div>
-                ) : (
+                ) : activeTab === 'items' ? (
                     <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
                         <AnimatePresence initial={false}>
                             {filteredItems.map((item) => (
@@ -417,6 +471,78 @@ export default function AdminDashboard() {
                             </div>
                         )}
                     </div>
+                ) : (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                        <AnimatePresence initial={false}>
+                            {categories.map((cat) => (
+                                <motion.div
+                                    key={cat.id}
+                                    layout
+                                    initial={{ opacity: 0, x: 20 }}
+                                    animate={{ opacity: 1, x: 0 }}
+                                    exit={{ opacity: 0, x: -20, height: 0, marginBottom: 0 }}
+                                    transition={{ duration: 0.25 }}
+                                    style={{
+                                        background: 'var(--color-surface)',
+                                        border: '1px solid var(--color-border)',
+                                        borderRadius: 16,
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        gap: 14,
+                                        padding: '16px 20px',
+                                        overflow: 'hidden',
+                                    }}
+                                >
+                                    {/* Info */}
+                                    <div style={{ flex: 1, minWidth: 0 }}>
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                                            <span style={{ fontFamily: "'Cairo', sans-serif", fontWeight: 700, fontSize: 16, color: 'var(--color-text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                                {cat.name_ar}
+                                            </span>
+                                            <span style={{ background: 'var(--color-surface-2)', color: 'var(--color-text-muted)', fontSize: 11, padding: '2px 8px', borderRadius: 20, fontFamily: "'Inter', sans-serif" }}>
+                                                Order: {cat.sort_order}
+                                            </span>
+                                        </div>
+                                        <div style={{ fontFamily: "'Inter', sans-serif", fontSize: 13, color: 'var(--color-text-muted)', marginTop: 4 }}>
+                                            {cat.name}
+                                        </div>
+                                    </div>
+
+                                    {/* Actions */}
+                                    <div style={{ display: 'flex', gap: 8, flexShrink: 0 }}>
+                                        <button
+                                            onClick={() => { setEditCategory(cat); setCategoryModalOpen(true); }}
+                                            style={{
+                                                background: 'var(--color-surface-2)', border: '1px solid var(--color-border)',
+                                                borderRadius: 8, padding: '7px 10px', cursor: 'pointer',
+                                                color: 'var(--color-primary-light)', display: 'flex', alignItems: 'center',
+                                                transition: 'background 0.2s',
+                                            }}
+                                        >
+                                            <Edit2 size={15} />
+                                        </button>
+                                        <button
+                                            onClick={() => { setDeleteCatTarget(cat); setDeleteCatOpen(true); }}
+                                            style={{
+                                                background: 'rgba(127,29,29,0.2)', border: '1px solid rgba(153,27,27,0.4)',
+                                                borderRadius: 8, padding: '7px 10px', cursor: 'pointer',
+                                                color: '#fca5a5', display: 'flex', alignItems: 'center',
+                                                transition: 'background 0.2s',
+                                            }}
+                                        >
+                                            <Trash2 size={15} />
+                                        </button>
+                                    </div>
+                                </motion.div>
+                            ))}
+                        </AnimatePresence>
+
+                        {categories.length === 0 && (
+                            <div style={{ textAlign: 'center', padding: '40px 20px', color: 'var(--color-text-muted)', fontFamily: "'Cairo', sans-serif", fontSize: 15 }}>
+                                لم تقم بإضافة أي فئات بعد
+                            </div>
+                        )}
+                    </div>
                 )}
             </main>
 
@@ -436,6 +562,14 @@ export default function AdminDashboard() {
                 onConfirm={handleDelete}
                 onCancel={() => { setDeleteOpen(false); setDeleteTarget(null); }}
                 deleting={deleting}
+            />
+
+            <DeleteDialog
+                open={deleteCatOpen}
+                itemName={deleteCatTarget?.name_ar ?? ''}
+                onConfirm={handleDeleteCategory}
+                onCancel={() => { setDeleteCatOpen(false); setDeleteCatTarget(null); }}
+                deleting={deletingCat}
             />
 
             <CategoryModal
