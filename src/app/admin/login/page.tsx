@@ -35,7 +35,6 @@ export default function AdminLoginPage() {
                 alignItems: 'center',
                 justifyContent: 'center',
                 padding: '20px',
-                direction: 'rtl',
             }}
         >
             <motion.div

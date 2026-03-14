@@ -9,6 +9,7 @@ import SkeletonCard from '@/components/SkeletonCard';
 import { Category, MenuItem } from '@/lib/types';
 import { supabase } from '@/lib/supabase';
 import { mockCategories, mockMenuItems } from '@/lib/mock-data';
+import { useLanguage } from '@/lib/LanguageContext';
 
 const USE_MOCK =
   !process.env.NEXT_PUBLIC_SUPABASE_URL ||
@@ -18,7 +19,8 @@ export default function MenuPage() {
   const [categories, setCategories] = useState<Category[]>([]);
   const [items, setItems] = useState<MenuItem[]>([]);
   const [loading, setLoading] = useState(true);
-  const [selectedCategory, setSelectedCategory] = useState('all');
+  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
+  const { t } = useLanguage();
 
   useEffect(() => {
     async function load() {
@@ -39,7 +41,10 @@ export default function MenuPage() {
           .eq('is_available', true)
           .order('sort_order'),
       ]);
-      if (cats) setCategories(cats);
+      if (cats) {
+        setCategories(cats);
+        if (cats.length > 0) setSelectedCategory(cats[0].id);
+      }
       if (menuItems) setItems(menuItems);
       setLoading(false);
     }
@@ -47,7 +52,7 @@ export default function MenuPage() {
   }, []);
 
   const visibleItems = useMemo(() => {
-    if (selectedCategory === 'all') return items;
+    if (!selectedCategory) return items;
     return items.filter((i) => i.category_id === selectedCategory);
   }, [items, selectedCategory]);
 
@@ -81,9 +86,12 @@ export default function MenuPage() {
               marginBottom: 16,
             }}
           >
-            {selectedCategory === 'all'
-              ? 'جميع الأطباق'
-              : categories.find((c) => c.id === selectedCategory)?.name_ar ?? ''}
+            {selectedCategory
+              ? t(
+                categories.find((c) => c.id === selectedCategory)?.name_ar ?? '',
+                categories.find((c) => c.id === selectedCategory)?.name ?? ''
+              )
+              : ''}
             {!loading && (
               <span
                 style={{
@@ -126,7 +134,7 @@ export default function MenuPage() {
               fontSize: 16,
             }}
           >
-            لا توجد أطباق في هذه الفئة حالياً
+            {t('لا توجد أطباق في هذه الفئة حالياً', 'No items in this category currently')}
           </motion.div>
         )}
       </main>
@@ -142,7 +150,7 @@ export default function MenuPage() {
           fontFamily: "'Cairo', sans-serif",
         }}
       >
-        © 2025 مطعم بيت الكرم — جميع الحقوق محفوظة
+        {t('© 2025 مطعم بيت الكرم — جميع الحقوق محفوظة', '© 2025 Beit Al-Karam Restaurant — All rights reserved')}
       </footer>
     </div>
   );

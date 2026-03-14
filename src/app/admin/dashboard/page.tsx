@@ -226,7 +226,7 @@ export default function AdminDashboard() {
 
     // ---------- Render ----------
     return (
-        <div style={{ minHeight: '100dvh', background: 'var(--color-bg)', direction: 'rtl' }}>
+        <div style={{ minHeight: '100dvh', background: 'var(--color-bg)' }}>
             {/* Top bar */}
             <header
                 style={{

@@ -3,21 +3,17 @@
 import { useRef } from 'react';
 import { motion } from 'framer-motion';
 import { Category } from '@/lib/types';
+import { useLanguage } from '@/lib/LanguageContext';
 
 interface CategoryNavProps {
     categories: Category[];
-    selected: string;
+    selected: string | null;
     onSelect: (id: string) => void;
 }
 
 export default function CategoryNav({ categories, selected, onSelect }: CategoryNavProps) {
     const scrollRef = useRef<HTMLDivElement>(null);
-
-    const ALL_ID = 'all';
-    const allCategories = [
-        { id: ALL_ID, name: 'All', name_ar: 'الكل', sort_order: 0, created_at: '' },
-        ...categories,
-    ];
+    const { t } = useLanguage();
 
     return (
         <div
@@ -39,10 +35,9 @@ export default function CategoryNav({ categories, selected, onSelect }: Category
                     padding: '12px 16px',
                     maxWidth: 640,
                     margin: '0 auto',
-                    flexDirection: 'row-reverse',
                 }}
             >
-                {allCategories.map((cat) => {
+                {categories.map((cat) => {
                     const isActive = selected === cat.id;
                     return (
                         <button
@@ -80,7 +75,7 @@ export default function CategoryNav({ categories, selected, onSelect }: Category
                                     transition={{ type: 'spring', stiffness: 400, damping: 30 }}
                                 />
                             )}
-                            {cat.name_ar}
+                            {t(cat.name_ar, cat.name)}
                         </button>
                     );
                 })}

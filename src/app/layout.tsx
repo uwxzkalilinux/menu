@@ -1,4 +1,5 @@
 import type { Metadata, Viewport } from 'next';
+import { LanguageProvider } from '@/lib/LanguageContext';
 import './globals.css';
 
 export const metadata: Metadata = {
@@ -15,9 +16,15 @@ export const viewport: Viewport = {
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
+  // Note: lang and dir are initially 'ar' and 'rtl', 
+  // but they will be dynamically updated by LanguageProvider
   return (
     <html lang="ar" dir="rtl">
-      <body>{children}</body>
+      <body>
+        <LanguageProvider>
+          {children}
+        </LanguageProvider>
+      </body>
     </html>
   );
 }
