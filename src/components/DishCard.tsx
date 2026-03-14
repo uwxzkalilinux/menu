@@ -5,6 +5,7 @@ import { motion } from 'framer-motion';
 import Image from 'next/image';
 import { MenuItem } from '@/lib/types';
 import { formatIQD } from '@/lib/supabase';
+import { useLanguage } from '@/lib/LanguageContext';
 
 interface DishCardProps {
     item: MenuItem;
@@ -14,6 +15,7 @@ interface DishCardProps {
 export default function DishCard({ item, index }: DishCardProps) {
     const [imageLoaded, setImageLoaded] = useState(false);
     const [imageError, setImageError] = useState(false);
+    const { t } = useLanguage();
 
     return (
         <motion.div
@@ -40,7 +42,7 @@ export default function DishCard({ item, index }: DishCardProps) {
                 {!imageError && item.image_url ? (
                     <Image
                         src={item.image_url}
-                        alt={item.name_ar}
+                        alt={t(item.name_ar, item.name)}
                         fill
                         sizes="(max-width: 640px) 45vw, 300px"
                         style={{
@@ -82,7 +84,7 @@ export default function DishCard({ item, index }: DishCardProps) {
                             fontWeight: 600,
                         }}
                     >
-                        غير متوفر
+                        {t('غير متوفر', 'Unavailable')}
                     </div>
                 )}
             </div>
@@ -98,10 +100,10 @@ export default function DishCard({ item, index }: DishCardProps) {
                         lineHeight: 1.3,
                     }}
                 >
-                    {item.name_ar}
+                    {t(item.name_ar, item.name)}
                 </h3>
 
-                {item.description_ar && (
+                {(item.description_ar || item.description) && (
                     <p
                         style={{
                             fontSize: 12,
@@ -114,7 +116,7 @@ export default function DishCard({ item, index }: DishCardProps) {
                             overflow: 'hidden',
                         }}
                     >
-                        {item.description_ar}
+                        {t(item.description_ar || '', item.description || '')}
                     </p>
                 )}
 
