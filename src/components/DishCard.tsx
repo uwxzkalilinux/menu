@@ -2,7 +2,6 @@
 
 import { useState } from 'react';
 import { motion } from 'framer-motion';
-import Image from 'next/image';
 import { MenuItem } from '@/lib/types';
 import { formatIQD } from '@/lib/supabase';
 import { useLanguage } from '@/lib/LanguageContext';
@@ -40,12 +39,12 @@ export default function DishCard({ item, index }: DishCardProps) {
                     <div className="skeleton" style={{ position: 'absolute', inset: 0 }} />
                 )}
                 {!imageError && item.image_url ? (
-                    <Image
+                    <img
                         src={item.image_url}
                         alt={t(item.name_ar, item.name)}
-                        fill
-                        sizes="(max-width: 640px) 45vw, 300px"
                         style={{
+                            width: '100%',
+                            height: '100%',
                             objectFit: 'cover',
                             opacity: imageLoaded ? 1 : 0,
                             transition: 'opacity 0.4s ease',
