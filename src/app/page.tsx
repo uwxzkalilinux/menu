@@ -6,6 +6,7 @@ import Header from '@/components/Header';
 import CategoryNav from '@/components/CategoryNav';
 import DishCard from '@/components/DishCard';
 import SkeletonCard from '@/components/SkeletonCard';
+import DishDetailsModal from '@/components/DishDetailsModal';
 import { Category, MenuItem } from '@/lib/types';
 import { supabase } from '@/lib/supabase';
 import { mockCategories, mockMenuItems } from '@/lib/mock-data';
@@ -20,6 +21,7 @@ export default function MenuPage() {
   const [items, setItems] = useState<MenuItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
+  const [selectedDish, setSelectedDish] = useState<MenuItem | null>(null);
   const { t } = useLanguage();
 
   useEffect(() => {
@@ -58,6 +60,30 @@ export default function MenuPage() {
 
   const handleCategorySelect = (id: string) => {
     setSelectedCategory(id);
+  };
+
+  const handleSwipe = (e: any, { offset }: any) => {
+    const swipeThreshold = 50;
+    if (Math.abs(offset.x) < swipeThreshold) return;
+
+    if (!categories.length || !selectedCategory) return;
+    const currentIndex = categories.findIndex((c) => c.id === selectedCategory);
+    if (currentIndex === -1) return;
+
+    const isRtl = document.documentElement.dir === 'rtl';
+    let nextIndex = currentIndex;
+
+    if (offset.x < -swipeThreshold) {
+      // Swiped Left
+      nextIndex = isRtl ? currentIndex - 1 : currentIndex + 1;
+    } else if (offset.x > swipeThreshold) {
+      // Swiped Right
+      nextIndex = isRtl ? currentIndex + 1 : currentIndex - 1;
+    }
+
+    if (nextIndex >= 0 && nextIndex < categories.length) {
+      setSelectedCategory(categories[nextIndex].id);
+    }
   };
 
   return (
@@ -108,19 +134,27 @@ export default function MenuPage() {
         </AnimatePresence>
 
         {/* Item grid */}
-        <div
-          style={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(2, 1fr)',
-            gap: 14,
-          }}
+        <motion.div
+          drag="x"
+          dragConstraints={{ left: 0, right: 0 }}
+          dragElastic={0.05}
+          onDragEnd={handleSwipe}
+          style={{ touchAction: 'pan-y', position: 'relative', zIndex: 10 }}
         >
-          {loading
-            ? Array.from({ length: 6 }).map((_, i) => <SkeletonCard key={i} />)
-            : visibleItems.map((item, idx) => (
-              <DishCard key={item.id} item={item} index={idx} />
-            ))}
-        </div>
+          <div
+            style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(2, 1fr)',
+              gap: 14,
+            }}
+          >
+            {loading
+              ? Array.from({ length: 6 }).map((_, i) => <SkeletonCard key={i} />)
+              : visibleItems.map((item, idx) => (
+                <DishCard key={item.id} item={item} index={idx} onClick={() => setSelectedDish(item)} />
+              ))}
+          </div>
+        </motion.div>
 
         {!loading && visibleItems.length === 0 && (
           <motion.div
@@ -152,6 +186,12 @@ export default function MenuPage() {
       >
         {t('© 2025 مطعم بيت الكرم — جميع الحقوق محفوظة', '© 2025 Beit Al-Karam Restaurant — All rights reserved')}
       </footer>
+
+      <DishDetailsModal
+        item={selectedDish}
+        isOpen={!!selectedDish}
+        onClose={() => setSelectedDish(null)}
+      />
     </div>
   );
 }

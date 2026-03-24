@@ -21,7 +21,7 @@ export default function CategoryNav({ categories, selected, onSelect }: Category
                 background: 'var(--color-surface)',
                 borderBottom: '1px solid var(--color-border)',
                 position: 'sticky',
-                top: 89,
+                top: 144,
                 zIndex: 40,
             }}
         >

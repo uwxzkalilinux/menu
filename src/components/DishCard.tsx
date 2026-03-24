@@ -9,9 +9,10 @@ import { useLanguage } from '@/lib/LanguageContext';
 interface DishCardProps {
     item: MenuItem;
     index: number;
+    onClick: () => void;
 }
 
-export default function DishCard({ item, index }: DishCardProps) {
+export default function DishCard({ item, index, onClick }: DishCardProps) {
     const [imageLoaded, setImageLoaded] = useState(false);
     const [imageError, setImageError] = useState(false);
     const { t } = useLanguage();
@@ -22,9 +23,11 @@ export default function DishCard({ item, index }: DishCardProps) {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.45, ease: 'easeOut', delay: index * 0.06 }}
             whileHover={{ y: -3, transition: { duration: 0.2 } }}
+            onClick={onClick}
             style={{
                 background: 'var(--color-surface)',
                 borderRadius: 20,
+                cursor: 'pointer',
                 overflow: 'hidden',
                 border: '1px solid var(--color-border)',
                 boxShadow: '0 2px 16px rgba(0,0,0,0.3)',
